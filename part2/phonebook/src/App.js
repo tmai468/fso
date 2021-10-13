@@ -19,6 +19,24 @@ const NumberDisplay = (props) => {
     </div>
   )
 }
+const SuccessMessage = (props) => {
+  const { newSuccessName } = props
+  if (newSuccessName !== '') {
+    return (
+      <div className="success">Added {newSuccessName}</div>
+    )
+  } else { return null}
+}
+const ErrorMessage = (props) => {
+  const { newErrorName } = props
+  if (newErrorName !== '') {
+    return (
+      <div className="error">Information of {newErrorName} has already been removed from server</div>
+    )
+  } else {
+    return null
+  }
+}
 const SearchFilter = (props) => {
   // console.log(props)
   const { searchTerm, saveSearchInputToNewSearchTerm } = props
@@ -54,6 +72,8 @@ const App = () => {
   }, []
   )
   const [ newName, setNewName ] = useState('')
+  const [ newSuccessName, setNewSuccessName ] = useState('')
+  const [ newErrorName, setNewErrorName ] = useState('')
   const [newNumber, setNewNumber ] = useState('')
   const [searchTerm, setNewSearchTerm] = useState('')
   const saveFormInputToNewName = (event) => {
@@ -75,13 +95,24 @@ const App = () => {
                           number: newNumber}
         axios.put(`http://localhost:3001/persons/${existingId}`, newPerson).then(resp => {
           setPersons(persons.filter(person=>person.id !== resp.data.id).concat(newPerson))
-        })
+        }).catch(
+          (error) => {
+            setNewErrorName(newName)
+            setTimeout(() => {setNewErrorName('')}, 5000)
+            setNewName('')
+            setNewNumber('')
+            setPersons(persons.filter((eachPerson) => {return eachPerson.name !== newPerson.name}))
+          }
+        )
       }
     } else {
+      console.log('here')
     const newPerson = { name: newName,
                         number: newNumber,
                         }
     console.log(newPerson)
+    setNewSuccessName(newName)
+    setTimeout(() => {setNewSuccessName('')}, 5000)
     personService.create(newPerson).then(addedPerson => {
       setPersons(persons.concat(addedPerson))
       setNewName('')
@@ -98,6 +129,8 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <SuccessMessage newSuccessName={newSuccessName}/>
+      <ErrorMessage newErrorName={newErrorName}/>
       <SearchFilter searchTerm={searchTerm} saveSearchInputToNewSearchTerm={saveSearchInputToNewSearchTerm}/>
       <h2>add a new</h2>
       <AddNewPeople newName={newName} newNumber={newNumber} addNewName={addNewName} saveFormInputToNewName={saveFormInputToNewName} saveFormInputToNewNumber={saveFormInputToNewNumber}/>
